@@ -1,0 +1,129 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Authenticated user profile and streamlined SSO preferences.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID matching the document ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254,
+          "description": "Verified Google account email address."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "User display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Profile avatar URL from Google Auth."
+        },
+        "accountLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "description": "User-selected portal workspace label."
+        },
+        "rememberTrustedDevice": {
+          "type": "boolean",
+          "description": "Whether the user prefers persistent trusted session state."
+        },
+        "requireStepUpForBilling": {
+          "type": "boolean",
+          "description": "Whether sensitive account actions request fresh re-authentication."
+        },
+        "preferredAuthMethod": {
+          "type": "string",
+          "enum": ["google"],
+          "description": "Primary federated sign-in provider."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the account record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest account update."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "displayName",
+        "photoURL",
+        "accountLabel",
+        "rememberTrustedDevice",
+        "requireStepUpForBilling",
+        "preferredAuthMethod",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SignInEvent": {
+      "title": "SignInEvent",
+      "description": "Individual federated Google sign-in session log entry owned by a user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Owner Firebase Auth UID."
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["google.com"],
+          "description": "Authentication provider identifier."
+        },
+        "deviceSummary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Browser and OS summary captured at sign-in."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "ended"],
+          "description": "Current status of the session entry."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of sign-in."
+        }
+      },
+      "required": [
+        "uid",
+        "provider",
+        "deviceSummary",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Private user account profile and Google SSO preferences."
+    },
+    "/users/{userId}/signInEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/SignInEvent" },
+      "description": "Private sign-in history entries belonging to a user."
+    }
+  }
+}
