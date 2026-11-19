@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
   addDoc,
@@ -18,6 +18,7 @@ import { AccountHub } from './components/AccountHub';
 import { AnalysisDashboard } from './components/AnalysisDashboard';
 import { EmotionDemo } from './components/EmotionDemo';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { GuidedJourneyDemo } from './components/GuidedJourneyDemo';
 import { LoginExperience } from './components/LoginExperience';
 import { LossAvoidanceDemo } from './components/LossAvoidanceDemo';
 import { OwnIdentityDemo } from './components/OwnIdentityDemo';
@@ -33,7 +34,15 @@ import {
   signInWithGoogleSSO,
   signOutPortal,
 } from './firebase';
-import type { DemoPrinciple, PortalTab, SignInEvent, UnauthViewMode, UserAccount } from './types';
+import {
+  DEFAULT_CLOSERS_PREFERENCES,
+  type ClosersPreferences,
+  type DemoPrinciple,
+  type PortalTab,
+  type SignInEvent,
+  type UnauthViewMode,
+  type UserAccount,
+} from './types';
 
 function getDeviceSummary(): string {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -73,10 +82,43 @@ function mapFirebaseAuthError(error: unknown): string {
   }
 }
 
+function extractClosersPrefs(data: UserAccount): ClosersPreferences {
+  return {
+    chosenGroupName:
+      typeof data.chosenGroupName === 'string' && data.chosenGroupName.trim().length > 0
+        ? data.chosenGroupName.trim().slice(0, 40)
+        : DEFAULT_CLOSERS_PREFERENCES.chosenGroupName,
+    shareGroupStatus:
+      typeof data.shareGroupStatus === 'boolean'
+        ? data.shareGroupStatus
+        : DEFAULT_CLOSERS_PREFERENCES.shareGroupStatus,
+    optedOutOfGroup:
+      typeof data.optedOutOfGroup === 'boolean'
+        ? data.optedOutOfGroup
+        : DEFAULT_CLOSERS_PREFERENCES.optedOutOfGroup,
+    hideTierProgress:
+      typeof data.hideTierProgress === 'boolean'
+        ? data.hideTierProgress
+        : DEFAULT_CLOSERS_PREFERENCES.hideTierProgress,
+    weeklyReminderOptIn:
+      typeof data.weeklyReminderOptIn === 'boolean'
+        ? data.weeklyReminderOptIn
+        : DEFAULT_CLOSERS_PREFERENCES.weeklyReminderOptIn,
+    trialReminder24h:
+      typeof data.trialReminder24h === 'boolean'
+        ? data.trialReminder24h
+        : DEFAULT_CLOSERS_PREFERENCES.trialReminder24h,
+    reducedMotionCelebration:
+      typeof data.reducedMotionCelebration === 'boolean'
+        ? data.reducedMotionCelebration
+        : DEFAULT_CLOSERS_PREFERENCES.reducedMotionCelebration,
+  };
+}
+
 function PortalApp() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [activePrinciple, setActivePrinciple] = useState<DemoPrinciple>('recognition');
+  const [activePrinciple, setActivePrinciple] = useState<DemoPrinciple>('analysis');
   const [unauthMode, setUnauthMode] = useState<UnauthViewMode>('side-by-side');
   const [activeTab, setActiveTab] = useState<PortalTab>('overview');
   const [rememberDevice, setRememberDevice] = useState(true);
@@ -84,12 +126,19 @@ function PortalApp() {
   const [signingOut, setSigningOut] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  const [closersPrefs, setClosersPrefs] = useState<ClosersPreferences>(
+    DEFAULT_CLOSERS_PREFERENCES
+  );
+  const closersPrefsRef = useRef<ClosersPreferences>(DEFAULT_CLOSERS_PREFERENCES);
+  closersPrefsRef.current = closersPrefs;
+
   const [profile, setProfile] = useState<UserAccount | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [events, setEvents] = useState<SignInEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
 
   const loggedSessionUidRef = useRef<string | null>(null);
+  const prefsPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
@@ -128,6 +177,7 @@ function PortalApp() {
             .slice(0, 100);
           const safeEmail = (user.email || '').trim().slice(0, 254);
           const safePhoto = (user.photoURL || '').slice(0, 500);
+          const initialPrefs = closersPrefsRef.current;
 
           await setDoc(userDocRef, {
             uid: user.uid,
@@ -138,6 +188,13 @@ function PortalApp() {
             rememberTrustedDevice: rememberDevice,
             requireStepUpForBilling: false,
             preferredAuthMethod: 'google',
+            chosenGroupName: initialPrefs.chosenGroupName.trim().slice(0, 40) || 'Tan Family Vault',
+            shareGroupStatus: initialPrefs.shareGroupStatus,
+            optedOutOfGroup: initialPrefs.optedOutOfGroup,
+            hideTierProgress: initialPrefs.hideTierProgress,
+            weeklyReminderOptIn: initialPrefs.weeklyReminderOptIn,
+            trialReminder24h: initialPrefs.trialReminder24h,
+            reducedMotionCelebration: initialPrefs.reducedMotionCelebration,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
@@ -170,7 +227,9 @@ function PortalApp() {
       userDocRef,
       (snap) => {
         if (snap.exists()) {
-          setProfile(snap.data() as UserAccount);
+          const data = snap.data() as UserAccount;
+          setProfile(data);
+          setClosersPrefs(extractClosersPrefs(data));
         }
         setProfileLoading(false);
       },
@@ -194,8 +253,14 @@ function PortalApp() {
           ...(d.data() as Omit<SignInEvent, 'id'>),
         }));
         loaded.sort((a, b) => {
-          const aMs = a.createdAt && typeof a.createdAt.toMillis === 'function' ? a.createdAt.toMillis() : Date.now();
-          const bMs = b.createdAt && typeof b.createdAt.toMillis === 'function' ? b.createdAt.toMillis() : Date.now();
+          const aMs =
+            a.createdAt && typeof a.createdAt.toMillis === 'function'
+              ? a.createdAt.toMillis()
+              : Date.now();
+          const bMs =
+            b.createdAt && typeof b.createdAt.toMillis === 'function'
+              ? b.createdAt.toMillis()
+              : Date.now();
           return bMs - aMs;
         });
         setEvents(loaded);
@@ -212,6 +277,53 @@ function PortalApp() {
       unsubEvents();
     };
   }, [authReady, user, rememberDevice]);
+
+  useEffect(() => {
+    return () => {
+      if (prefsPersistTimerRef.current) {
+        clearTimeout(prefsPersistTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleUpdateClosersPrefs = useCallback(
+    (partial: Partial<ClosersPreferences>) => {
+      const next: ClosersPreferences = {
+        ...closersPrefsRef.current,
+        ...partial,
+      };
+      if (partial.chosenGroupName !== undefined) {
+        next.chosenGroupName = partial.chosenGroupName.slice(0, 40);
+      }
+      closersPrefsRef.current = next;
+      setClosersPrefs(next);
+
+      if (!user) return;
+
+      if (prefsPersistTimerRef.current) {
+        clearTimeout(prefsPersistTimerRef.current);
+      }
+
+      prefsPersistTimerRef.current = setTimeout(() => {
+        const path = `users/${user.uid}`;
+        const latest = closersPrefsRef.current;
+        const safeGroup = latest.chosenGroupName.trim().slice(0, 40) || 'Tan Family Vault';
+        void updateDoc(doc(db, 'users', user.uid), {
+          chosenGroupName: safeGroup,
+          shareGroupStatus: latest.shareGroupStatus,
+          optedOutOfGroup: latest.optedOutOfGroup,
+          hideTierProgress: latest.hideTierProgress,
+          weeklyReminderOptIn: latest.weeklyReminderOptIn,
+          trialReminder24h: latest.trialReminder24h,
+          reducedMotionCelebration: latest.reducedMotionCelebration,
+          updatedAt: serverTimestamp(),
+        }).catch((error) => {
+          handleFirestoreError(error, OperationType.UPDATE, path);
+        });
+      }, 250);
+    },
+    [user]
+  );
 
   const handleGoogleSignIn = async () => {
     setAuthError(null);
@@ -239,8 +351,20 @@ function PortalApp() {
     accountLabel: string;
     rememberTrustedDevice: boolean;
     requireStepUpForBilling: boolean;
+    closersPrefs: ClosersPreferences;
   }) => {
     if (!user) return;
+    if (prefsPersistTimerRef.current) {
+      clearTimeout(prefsPersistTimerRef.current);
+    }
+    const safeGroup = updates.closersPrefs.chosenGroupName.trim().slice(0, 40) || 'Tan Family Vault';
+    const nextPrefs = {
+      ...updates.closersPrefs,
+      chosenGroupName: safeGroup,
+    };
+    setClosersPrefs(nextPrefs);
+    closersPrefsRef.current = nextPrefs;
+
     const path = `users/${user.uid}`;
     try {
       await updateDoc(doc(db, 'users', user.uid), {
@@ -249,6 +373,13 @@ function PortalApp() {
         accountLabel: updates.accountLabel.trim().slice(0, 60),
         rememberTrustedDevice: updates.rememberTrustedDevice,
         requireStepUpForBilling: updates.requireStepUpForBilling,
+        chosenGroupName: nextPrefs.chosenGroupName,
+        shareGroupStatus: nextPrefs.shareGroupStatus,
+        optedOutOfGroup: nextPrefs.optedOutOfGroup,
+        hideTierProgress: nextPrefs.hideTierProgress,
+        weeklyReminderOptIn: nextPrefs.weeklyReminderOptIn,
+        trialReminder24h: nextPrefs.trialReminder24h,
+        reducedMotionCelebration: nextPrefs.reducedMotionCelebration,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
@@ -305,12 +436,24 @@ function PortalApp() {
       <div className="flex-1">
         {activePrinciple === 'analysis' ? (
           <AnalysisDashboard onOpenPrinciple={setActivePrinciple} />
+        ) : activePrinciple === 'journey' ? (
+          <GuidedJourneyDemo
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+            isSignedIn={Boolean(user)}
+            onGoogleSignIn={handleGoogleSignIn}
+            signingIn={signingIn}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
+          />
         ) : activePrinciple === 'stickiness' ? (
           <StickinessDemo
             mode={unauthMode}
             onChangeMode={setUnauthMode}
             onChangePrinciple={setActivePrinciple}
             userName={profile?.displayName ?? user?.displayName ?? null}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
           />
         ) : activePrinciple === 'recognition' ? (
           <RecognitionDemo
@@ -325,6 +468,8 @@ function PortalApp() {
             onChangeMode={setUnauthMode}
             onChangePrinciple={setActivePrinciple}
             userName={profile?.displayName ?? user?.displayName ?? null}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
           />
         ) : activePrinciple === 'status' ? (
           <StatusDemo
@@ -332,6 +477,8 @@ function PortalApp() {
             onChangeMode={setUnauthMode}
             onChangePrinciple={setActivePrinciple}
             userName={profile?.displayName ?? user?.displayName ?? null}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
           />
         ) : activePrinciple === 'own-identity' ? (
           <OwnIdentityDemo
@@ -339,6 +486,8 @@ function PortalApp() {
             onChangeMode={setUnauthMode}
             onChangePrinciple={setActivePrinciple}
             userName={profile?.displayName ?? user?.displayName ?? null}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
           />
         ) : activePrinciple === 'loss-avoidance' ? (
           <LossAvoidanceDemo
@@ -346,6 +495,8 @@ function PortalApp() {
             onChangeMode={setUnauthMode}
             onChangePrinciple={setActivePrinciple}
             userName={profile?.displayName ?? user?.displayName ?? null}
+            closersPrefs={closersPrefs}
+            onUpdateClosersPrefs={handleUpdateClosersPrefs}
           />
         ) : !user ? (
           <LoginExperience
@@ -367,6 +518,8 @@ function PortalApp() {
             eventsLoading={eventsLoading}
             activeTab={activeTab}
             onChangeTab={setActiveTab}
+            onChangePrinciple={setActivePrinciple}
+            closersPrefs={closersPrefs}
             onSaveProfile={handleSaveProfile}
             onEndSession={handleEndSession}
             onDeleteSession={handleDeleteSession}

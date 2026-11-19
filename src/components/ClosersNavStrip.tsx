@@ -1,3 +1,4 @@
+import { Compass } from 'lucide-react';
 import type { DemoPrinciple } from '../types';
 
 interface ClosersNavStripProps {
@@ -5,8 +6,10 @@ interface ClosersNavStripProps {
   onChangePrinciple: (principle: DemoPrinciple) => void;
 }
 
+type TriggerKey = Exclude<DemoPrinciple, 'analysis' | 'journey'>;
+
 const CLOSERS_ITEMS: {
-  id: Exclude<DemoPrinciple, 'analysis'>;
+  id: TriggerKey;
   letter: string;
   label: string;
   activeClass: string;
@@ -79,7 +82,9 @@ export function ClosersNavStrip({
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
               }`}
             >
-              <span className="font-mono font-bold">{idx + 1}. {item.letter}</span>
+              <span className="font-mono font-bold">
+                {idx + 1}. {item.letter}
+              </span>
               <span className={isActive ? 'text-white/95' : 'text-slate-600'}>
                 {item.label}
               </span>
@@ -88,13 +93,32 @@ export function ClosersNavStrip({
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={() => onChangePrinciple('analysis')}
-        className="text-xs font-semibold text-slate-900 hover:text-emerald-700 underline underline-offset-4 whitespace-nowrap shrink-0 cursor-pointer"
-      >
-        View Signup Impact Analysis
-      </button>
+      <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <button
+          type="button"
+          onClick={() => onChangePrinciple('journey')}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            activePrinciple === 'journey'
+              ? 'bg-slate-900 text-white border-slate-900'
+              : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          <Compass className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>Guided Journey</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onChangePrinciple('analysis')}
+          className={`text-xs font-semibold underline underline-offset-4 whitespace-nowrap shrink-0 cursor-pointer ${
+            activePrinciple === 'analysis'
+              ? 'text-emerald-700'
+              : 'text-slate-900 hover:text-emerald-700'
+          }`}
+        >
+          Signup Impact Analysis
+        </button>
+      </div>
     </div>
   );
 }

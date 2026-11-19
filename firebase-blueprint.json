@@ -58,6 +58,36 @@
           "type": "string",
           "format": "date-time",
           "description": "Server timestamp of the latest account update."
+        },
+        "chosenGroupName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "User-chosen group or tribe name displayed in Own Identity flows."
+        },
+        "shareGroupStatus": {
+          "type": "boolean",
+          "description": "Explicit user consent to share backup activity with their chosen group."
+        },
+        "optedOutOfGroup": {
+          "type": "boolean",
+          "description": "Whether the user opted out of group visibility."
+        },
+        "hideTierProgress": {
+          "type": "boolean",
+          "description": "Whether the user prefers hiding status tier comparisons."
+        },
+        "weeklyReminderOptIn": {
+          "type": "boolean",
+          "description": "Opt-in toggle for weekly Sunday backup streak reminders."
+        },
+        "trialReminder24h": {
+          "type": "boolean",
+          "description": "Opt-in toggle for 24-hour pre-expiration reminders."
+        },
+        "reducedMotionCelebration": {
+          "type": "boolean",
+          "description": "Preference for reduced-motion confirmation states."
         }
       },
       "required": [

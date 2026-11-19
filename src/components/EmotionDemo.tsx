@@ -8,7 +8,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from 'lucide-react';
-import type { DemoPrinciple, UnauthViewMode } from '../types';
+import type { ClosersPreferences, DemoPrinciple, UnauthViewMode } from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface EmotionDemoProps {
@@ -16,6 +16,8 @@ interface EmotionDemoProps {
   onChangeMode: (mode: UnauthViewMode) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   userName?: string | null;
+  closersPrefs: ClosersPreferences;
+  onUpdateClosersPrefs: (partial: Partial<ClosersPreferences>) => void;
 }
 
 const SUBTLE_TICKS = [
@@ -30,9 +32,12 @@ export function EmotionDemo({
   onChangeMode,
   onChangePrinciple,
   userName,
+  closersPrefs,
+  onUpdateClosersPrefs,
 }: EmotionDemoProps) {
   const osPrefersReduced = useReducedMotion();
-  const [reducedMotionPreview, setReducedMotionPreview] = useState(Boolean(osPrefersReduced));
+  const reducedMotionPreview =
+    Boolean(osPrefersReduced) || closersPrefs.reducedMotionCelebration;
   const [beforeSubmitted, setBeforeSubmitted] = useState(false);
   const [beforeEmail, setBeforeEmail] = useState('');
   const [beforePassword, setBeforePassword] = useState('');
@@ -40,10 +45,10 @@ export function EmotionDemo({
   const [browsingOnly, setBrowsingOnly] = useState(false);
 
   useEffect(() => {
-    if (osPrefersReduced) {
-      setReducedMotionPreview(true);
+    if (osPrefersReduced && !closersPrefs.reducedMotionCelebration) {
+      onUpdateClosersPrefs({ reducedMotionCelebration: true });
     }
-  }, [osPrefersReduced]);
+  }, [osPrefersReduced, closersPrefs.reducedMotionCelebration, onUpdateClosersPrefs]);
 
   const ownerDisplay = userName?.trim() ? userName.trim() : 'your devices';
 
@@ -235,7 +240,9 @@ export function EmotionDemo({
                   <input
                     type="checkbox"
                     checked={reducedMotionPreview}
-                    onChange={(e) => setReducedMotionPreview(e.target.checked)}
+                    onChange={(e) =>
+                      onUpdateClosersPrefs({ reducedMotionCelebration: e.target.checked })
+                    }
                     className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-600 cursor-pointer"
                   />
                   <span>Reduced-motion mode</span>
@@ -391,7 +398,9 @@ export function EmotionDemo({
               <input
                 type="checkbox"
                 checked={reducedMotionPreview}
-                onChange={(e) => setReducedMotionPreview(e.target.checked)}
+                onChange={(e) =>
+                  onUpdateClosersPrefs({ reducedMotionCelebration: e.target.checked })
+                }
                 className="w-3.5 h-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-600"
               />
               <span>Reduced-motion mode</span>

@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Smartphone,
 } from 'lucide-react';
-import type { DemoPrinciple, UnauthViewMode } from '../types';
+import type { ClosersPreferences, DemoPrinciple, UnauthViewMode } from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface LossAvoidanceDemoProps {
@@ -20,6 +20,8 @@ interface LossAvoidanceDemoProps {
   onChangeMode: (mode: UnauthViewMode) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   userName?: string | null;
+  closersPrefs: ClosersPreferences;
+  onUpdateClosersPrefs: (partial: Partial<ClosersPreferences>) => void;
 }
 
 export function LossAvoidanceDemo({
@@ -27,6 +29,8 @@ export function LossAvoidanceDemo({
   onChangeMode,
   onChangePrinciple,
   userName,
+  closersPrefs,
+  onUpdateClosersPrefs,
 }: LossAvoidanceDemoProps) {
   // Real deadline anchored 6 days, 14 hours, 22 minutes ahead so the countdown is concrete and honest
   const deadlineTimestamp = useMemo(
@@ -37,8 +41,8 @@ export function LossAvoidanceDemo({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [beforeActionFeedback, setBeforeActionFeedback] = useState<string | null>(null);
   const [afterState, setAfterState] = useState<'active' | 'confirmed' | 'exported'>('active');
-  const [reminderSet, setReminderSet] = useState(false);
   const [showCancelPolicy, setShowCancelPolicy] = useState(false);
+  const reminderSet = closersPrefs.trialReminder24h;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -259,7 +263,6 @@ export function LossAvoidanceDemo({
                     type="button"
                     onClick={() => {
                       setAfterState('active');
-                      setReminderSet(false);
                       setShowCancelPolicy(false);
                     }}
                     className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-700 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
@@ -373,7 +376,9 @@ export function LossAvoidanceDemo({
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-slate-600">
                       <button
                         type="button"
-                        onClick={() => setReminderSet((prev) => !prev)}
+                        onClick={() =>
+                          onUpdateClosersPrefs({ trialReminder24h: !reminderSet })
+                        }
                         className="inline-flex items-center gap-1.5 hover:text-slate-900 cursor-pointer"
                       >
                         <Bell className="w-3.5 h-3.5 text-emerald-700" aria-hidden="true" />

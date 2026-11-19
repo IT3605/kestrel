@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Snowflake,
 } from 'lucide-react';
-import type { DemoPrinciple, UnauthViewMode } from '../types';
+import type { ClosersPreferences, DemoPrinciple, UnauthViewMode } from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface StickinessDemoProps {
@@ -16,6 +16,8 @@ interface StickinessDemoProps {
   onChangeMode: (mode: UnauthViewMode) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   userName?: string | null;
+  closersPrefs: ClosersPreferences;
+  onUpdateClosersPrefs: (partial: Partial<ClosersPreferences>) => void;
 }
 
 export function StickinessDemo({
@@ -23,12 +25,14 @@ export function StickinessDemo({
   onChangeMode,
   onChangePrinciple,
   userName,
+  closersPrefs,
+  onUpdateClosersPrefs,
 }: StickinessDemoProps) {
   const [beforeSkipped, setBeforeSkipped] = useState(false);
   const [streakWeeks, setStreakWeeks] = useState(5);
   const [freezesRemaining, setFreezesRemaining] = useState(2);
   const [streakStatus, setStreakStatus] = useState<'active' | 'frozen' | 'returned'>('active');
-  const [weeklyReminderOptIn, setWeeklyReminderOptIn] = useState(true);
+  const weeklyReminderOptIn = closersPrefs.weeklyReminderOptIn;
 
   const ownerDisplay = userName?.trim() ? userName.trim() : 'Your Vault';
 
@@ -52,7 +56,7 @@ export function StickinessDemo({
     setStreakWeeks(5);
     setFreezesRemaining(2);
     setStreakStatus('active');
-    setWeeklyReminderOptIn(true);
+    onUpdateClosersPrefs({ weeklyReminderOptIn: true });
   };
 
   return (
@@ -304,7 +308,9 @@ export function StickinessDemo({
                     <input
                       type="checkbox"
                       checked={weeklyReminderOptIn}
-                      onChange={(e) => setWeeklyReminderOptIn(e.target.checked)}
+                      onChange={(e) =>
+                        onUpdateClosersPrefs({ weeklyReminderOptIn: e.target.checked })
+                      }
                       className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer"
                     />
                     <span>

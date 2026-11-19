@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   TrendingUp,
 } from 'lucide-react';
-import type { DemoPrinciple, UnauthViewMode } from '../types';
+import type { ClosersPreferences, DemoPrinciple, UnauthViewMode } from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface StatusDemoProps {
@@ -17,6 +17,8 @@ interface StatusDemoProps {
   onChangeMode: (mode: UnauthViewMode) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   userName?: string | null;
+  closersPrefs: ClosersPreferences;
+  onUpdateClosersPrefs: (partial: Partial<ClosersPreferences>) => void;
 }
 
 interface TierSpec {
@@ -52,11 +54,13 @@ export function StatusDemo({
   onChangeMode,
   onChangePrinciple,
   userName,
+  closersPrefs,
+  onUpdateClosersPrefs,
 }: StatusDemoProps) {
   const [beforeNotice, setBeforeNotice] = useState(false);
   const [milestonesCompleted, setMilestonesCompleted] = useState<number>(4);
   const [backedUpGb, setBackedUpGb] = useState<number>(185);
-  const [hideTierComparison, setHideTierComparison] = useState(false);
+  const hideTierComparison = closersPrefs.hideTierProgress;
 
   const ownerDisplay = userName?.trim() ? userName.trim() : 'Your Account';
 
@@ -86,7 +90,7 @@ export function StatusDemo({
   const handleReset = () => {
     setMilestonesCompleted(4);
     setBackedUpGb(185);
-    setHideTierComparison(false);
+    onUpdateClosersPrefs({ hideTierProgress: false });
   };
 
   return (
@@ -257,7 +261,7 @@ export function StatusDemo({
                   </p>
                   <button
                     type="button"
-                    onClick={() => setHideTierComparison(false)}
+                    onClick={() => onUpdateClosersPrefs({ hideTierProgress: false })}
                     className="px-4 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                   >
                     Show tier progress again
@@ -380,7 +384,7 @@ export function StatusDemo({
                     </span>
                     <button
                       type="button"
-                      onClick={() => setHideTierComparison(true)}
+                      onClick={() => onUpdateClosersPrefs({ hideTierProgress: true })}
                       className="text-slate-600 hover:text-slate-900 underline underline-offset-2 cursor-pointer self-start sm:self-auto"
                     >
                       Hide tier view

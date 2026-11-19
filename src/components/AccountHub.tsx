@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Check, CheckCircle2, LogOut, Shield, Trash2, UserCheck } from 'lucide-react';
-import type { PortalTab, SignInEvent, UserAccount } from '../types';
+import type { ClosersPreferences, DemoPrinciple, PortalTab, SignInEvent, UserAccount } from '../types';
+import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface AccountHubProps {
   user: User;
@@ -11,11 +12,14 @@ interface AccountHubProps {
   eventsLoading: boolean;
   activeTab: PortalTab;
   onChangeTab: (tab: PortalTab) => void;
+  onChangePrinciple: (principle: DemoPrinciple) => void;
+  closersPrefs: ClosersPreferences;
   onSaveProfile: (updates: {
     displayName: string;
     accountLabel: string;
     rememberTrustedDevice: boolean;
     requireStepUpForBilling: boolean;
+    closersPrefs: ClosersPreferences;
   }) => Promise<void>;
   onEndSession: (eventId: string) => Promise<void>;
   onDeleteSession: (eventId: string) => Promise<void>;
@@ -29,6 +33,8 @@ export function AccountHub({
   eventsLoading,
   activeTab,
   onChangeTab,
+  onChangePrinciple,
+  closersPrefs,
   onSaveProfile,
   onEndSession,
   onDeleteSession,
@@ -41,6 +47,7 @@ export function AccountHub({
   const [requireStepUpForBilling, setRequireStepUpForBilling] = useState(
     profile?.requireStepUpForBilling ?? false
   );
+  const [draftClosers, setDraftClosers] = useState<ClosersPreferences>(closersPrefs);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -55,6 +62,10 @@ export function AccountHub({
     }
   }, [profile]);
 
+  useEffect(() => {
+    setDraftClosers(closersPrefs);
+  }, [closersPrefs]);
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveMessage(null);
@@ -62,6 +73,7 @@ export function AccountHub({
 
     const trimmedName = displayName.trim();
     const trimmedLabel = accountLabel.trim();
+    const trimmedGroup = draftClosers.chosenGroupName.trim() || 'Tan Family Vault';
 
     if (trimmedName.length < 1 || trimmedName.length > 100) {
       setSaveError('Please enter a name between 1 and 100 characters.');
@@ -69,6 +81,10 @@ export function AccountHub({
     }
     if (trimmedLabel.length < 1 || trimmedLabel.length > 60) {
       setSaveError('Please select a valid account type.');
+      return;
+    }
+    if (trimmedGroup.length < 1 || trimmedGroup.length > 40) {
+      setSaveError('Group name must be between 1 and 40 characters.');
       return;
     }
 
@@ -79,8 +95,12 @@ export function AccountHub({
         accountLabel: trimmedLabel,
         rememberTrustedDevice,
         requireStepUpForBilling,
+        closersPrefs: {
+          ...draftClosers,
+          chosenGroupName: trimmedGroup,
+        },
       });
-      setSaveMessage('Your preferences have been saved.');
+      setSaveMessage('Your account and guardrail preferences have been saved.');
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save preferences.');
     } finally {
@@ -108,7 +128,9 @@ export function AccountHub({
 
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10">
-      {/* Friendly Welcome Header */}
+      <ClosersNavStrip activePrinciple="convenience" onChangePrinciple={onChangePrinciple} />
+
+      {/* Friendly Welcome Header with Desktop + Mobile Tab Switcher */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200">
         <div>
           <p className="text-xs font-medium text-emerald-700 mb-1">
@@ -118,13 +140,19 @@ export function AccountHub({
             Welcome back, {profile?.displayName || user.displayName || 'there'}
           </h1>
           <p className="mt-1.5 text-sm text-slate-600">
-            You&apos;re in—no account numbers, passwords, or PINs needed.
+            Manage your Google account settings, saved privacy guardrails, and recent sign-in devices.
           </p>
         </div>
 
-        <div className="flex md:hidden items-center gap-1 p-1 bg-slate-100 rounded-lg self-start">
+        <div
+          role="tablist"
+          aria-label="Account sections"
+          className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-lg self-start"
+        >
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'overview'}
             onClick={() => onChangeTab('overview')}
             className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'overview'
@@ -136,6 +164,8 @@ export function AccountHub({
           </button>
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'activity'}
             onClick={() => onChangeTab('activity')}
             className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'activity'
@@ -143,7 +173,7 @@ export function AccountHub({
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Recent Sign-Ins
+            Recent Sign-Ins ({events.length})
           </button>
         </div>
       </div>
@@ -197,19 +227,33 @@ export function AccountHub({
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-4">
+                <dt className="text-slate-500">Chosen group</dt>
+                <dd className="font-medium text-slate-900">
+                  {closersPrefs.optedOutOfGroup ? 'Private (opted out)' : closersPrefs.chosenGroupName}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
                 <dt className="text-slate-500">Recent sign-ins</dt>
-                <dd className="font-mono tabular-nums text-slate-900">{events.length}</dd>
+                <dd className="font-mono tabular-nums text-slate-900">
+                  <button
+                    type="button"
+                    onClick={() => onChangeTab('activity')}
+                    className="underline underline-offset-2 hover:text-emerald-700 cursor-pointer"
+                  >
+                    {events.length} {events.length === 1 ? 'visit' : 'visits'}
+                  </button>
+                </dd>
               </div>
             </dl>
           </section>
 
-          {/* Preferences Form */}
+          {/* Preferences + Persisted Guardrails Form */}
           <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
             <h2 className="text-lg font-semibold text-slate-900 mb-1">
-              Your Preferences
+              Account &amp; Privacy Guardrail Preferences
             </h2>
             <p className="text-sm text-slate-600 mb-6">
-              Update how your name and sign-in preferences appear in the portal.
+              Changes made here—or inside any live demo—are saved to your account across sessions.
             </p>
 
             {profileLoading ? (
@@ -258,6 +302,25 @@ export function AccountHub({
                   </div>
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="profile-chosen-group"
+                    className="block text-xs font-medium text-slate-700 mb-1.5"
+                  >
+                    Chosen Group Name (Own Identity)
+                  </label>
+                  <input
+                    id="profile-chosen-group"
+                    type="text"
+                    maxLength={40}
+                    value={draftClosers.chosenGroupName}
+                    onChange={(e) =>
+                      setDraftClosers((prev) => ({ ...prev, chosenGroupName: e.target.value }))
+                    }
+                    className="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-emerald-700"
+                  />
+                </div>
+
                 <div className="pt-2 space-y-3 border-t border-slate-100">
                   <label className="flex items-start gap-3 cursor-pointer pt-2">
                     <input
@@ -289,6 +352,108 @@ export function AccountHub({
                       </span>
                       <span className="block text-xs text-slate-500">
                         Quickly verify it&apos;s you with Google instead of entering a 6-digit PIN.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draftClosers.shareGroupStatus && !draftClosers.optedOutOfGroup}
+                      onChange={(e) =>
+                        setDraftClosers((prev) => ({
+                          ...prev,
+                          shareGroupStatus: e.target.checked,
+                          optedOutOfGroup: e.target.checked ? false : prev.optedOutOfGroup,
+                        }))
+                      }
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-slate-900">
+                        Share backup activity with my chosen group
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Consent guardrail: keep off to sync privately without notifying group members.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draftClosers.weeklyReminderOptIn}
+                      onChange={(e) =>
+                        setDraftClosers((prev) => ({ ...prev, weeklyReminderOptIn: e.target.checked }))
+                      }
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-slate-900">
+                        Weekly Sunday backup streak reminders
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Stickiness guardrail: opt out anytime while keeping your streak intact.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draftClosers.trialReminder24h}
+                      onChange={(e) =>
+                        setDraftClosers((prev) => ({ ...prev, trialReminder24h: e.target.checked }))
+                      }
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-slate-900">
+                        Send 24-hour reminder before trial or credit expires
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Loss Avoidance guardrail: prevents unexpected renewals.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draftClosers.hideTierProgress}
+                      onChange={(e) =>
+                        setDraftClosers((prev) => ({ ...prev, hideTierProgress: e.target.checked }))
+                      }
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-slate-900">
+                        Hide status tier ladder comparisons
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Status guardrail: switch to a calm simple view anytime.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={draftClosers.reducedMotionCelebration}
+                      onChange={(e) =>
+                        setDraftClosers((prev) => ({
+                          ...prev,
+                          reducedMotionCelebration: e.target.checked,
+                        }))
+                      }
+                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-700 cursor-pointer"
+                    />
+                    <div>
+                      <span className="block text-sm font-medium text-slate-900">
+                        Use reduced-motion confirmation screens
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        Emotion guardrail: disables celebratory motion for calm, accessible feedback.
                       </span>
                     </div>
                   </label>

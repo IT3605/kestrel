@@ -60,7 +60,14 @@ service cloud.firestore {
           'requireStepUpForBilling',
           'preferredAuthMethod',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'chosenGroupName',
+          'shareGroupStatus',
+          'optedOutOfGroup',
+          'hideTierProgress',
+          'weeklyReminderOptIn',
+          'trialReminder24h',
+          'reducedMotionCelebration'
         ])
         && data.uid is string
         && data.uid == request.auth.uid
@@ -81,7 +88,14 @@ service cloud.firestore {
         && data.requireStepUpForBilling is bool
         && data.preferredAuthMethod == 'google'
         && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
+        && data.updatedAt is timestamp
+        && (!('chosenGroupName' in data) || (data.chosenGroupName is string && data.chosenGroupName.size() >= 1 && data.chosenGroupName.size() <= 40))
+        && (!('shareGroupStatus' in data) || data.shareGroupStatus is bool)
+        && (!('optedOutOfGroup' in data) || data.optedOutOfGroup is bool)
+        && (!('hideTierProgress' in data) || data.hideTierProgress is bool)
+        && (!('weeklyReminderOptIn' in data) || data.weeklyReminderOptIn is bool)
+        && (!('trialReminder24h' in data) || data.trialReminder24h is bool)
+        && (!('reducedMotionCelebration' in data) || data.reducedMotionCelebration is bool);
     }
 
     // Entity Blueprint: SignInEvent
@@ -139,6 +153,13 @@ service cloud.firestore {
           'accountLabel',
           'rememberTrustedDevice',
           'requireStepUpForBilling',
+          'chosenGroupName',
+          'shareGroupStatus',
+          'optedOutOfGroup',
+          'hideTierProgress',
+          'weeklyReminderOptIn',
+          'trialReminder24h',
+          'reducedMotionCelebration',
           'updatedAt'
         ]);
 

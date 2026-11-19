@@ -10,7 +10,7 @@ import {
   UserCheck,
   Users,
 } from 'lucide-react';
-import type { DemoPrinciple, UnauthViewMode } from '../types';
+import type { ClosersPreferences, DemoPrinciple, UnauthViewMode } from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface OwnIdentityDemoProps {
@@ -18,6 +18,8 @@ interface OwnIdentityDemoProps {
   onChangeMode: (mode: UnauthViewMode) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   userName?: string | null;
+  closersPrefs: ClosersPreferences;
+  onUpdateClosersPrefs: (partial: Partial<ClosersPreferences>) => void;
 }
 
 interface PresetGroup {
@@ -53,18 +55,18 @@ export function OwnIdentityDemo({
   onChangeMode,
   onChangePrinciple,
   userName,
+  closersPrefs,
+  onUpdateClosersPrefs,
 }: OwnIdentityDemoProps) {
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('family');
-  const [customGroupName, setCustomGroupName] = useState<string>('');
   const [beforeClicked, setBeforeClicked] = useState(false);
   const [syncedThisWeek, setSyncedThisWeek] = useState(false);
-  const [shareActivityConsent, setShareActivityConsent] = useState(true);
-  const [optedOutOfGroup, setOptedOutOfGroup] = useState(false);
 
+  const displayedGroupName = closersPrefs.chosenGroupName || 'Tan Family Vault';
   const activePreset =
-    PRESET_GROUPS.find((g) => g.id === selectedPresetId) ?? PRESET_GROUPS[0];
-  const displayedGroupName =
-    customGroupName.trim().length > 0 ? customGroupName.trim() : activePreset.name;
+    PRESET_GROUPS.find((g) => g.name === displayedGroupName) ?? PRESET_GROUPS[0];
+  const isCustomGroup = !PRESET_GROUPS.some((g) => g.name === displayedGroupName);
+  const shareActivityConsent = closersPrefs.shareGroupStatus;
+  const optedOutOfGroup = closersPrefs.optedOutOfGroup;
 
   const currentUserDisplay = userName?.trim() ? userName.trim() : 'You';
   const currentStreak = syncedThisWeek
@@ -73,8 +75,10 @@ export function OwnIdentityDemo({
 
   const handleResetDemo = () => {
     setSyncedThisWeek(false);
-    setShareActivityConsent(true);
-    setOptedOutOfGroup(false);
+    onUpdateClosersPrefs({
+      shareGroupStatus: true,
+      optedOutOfGroup: false,
+    });
   };
 
   return (
@@ -244,12 +248,13 @@ export function OwnIdentityDemo({
                         key={group.id}
                         type="button"
                         onClick={() => {
-                          setSelectedPresetId(group.id);
-                          setCustomGroupName('');
-                          setOptedOutOfGroup(false);
+                          onUpdateClosersPrefs({
+                            chosenGroupName: group.name,
+                            optedOutOfGroup: false,
+                          });
                         }}
                         className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
-                          selectedPresetId === group.id && customGroupName.trim() === ''
+                          displayedGroupName === group.name && !optedOutOfGroup
                             ? 'bg-violet-800 text-white'
                             : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
                         }`}
@@ -267,10 +272,12 @@ export function OwnIdentityDemo({
                     id="custom-tribe-name"
                     type="text"
                     maxLength={40}
-                    value={customGroupName}
+                    value={isCustomGroup ? displayedGroupName : ''}
                     onChange={(e) => {
-                      setCustomGroupName(e.target.value);
-                      if (optedOutOfGroup) setOptedOutOfGroup(false);
+                      onUpdateClosersPrefs({
+                        chosenGroupName: e.target.value.slice(0, 40) || 'Tan Family Vault',
+                        optedOutOfGroup: false,
+                      });
                     }}
                     placeholder="Or type any group name (e.g. Weekend Hikers, Class of '26)..."
                     className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-violet-700"
@@ -430,14 +437,16 @@ export function OwnIdentityDemo({
                       <input
                         type="checkbox"
                         checked={shareActivityConsent}
-                        onChange={(e) => setShareActivityConsent(e.target.checked)}
+                        onChange={(e) =>
+                          onUpdateClosersPrefs({ shareGroupStatus: e.target.checked })
+                        }
                         className="w-4 h-4 rounded border-slate-300 text-violet-700 focus:ring-violet-700 cursor-pointer"
                       />
                       <span>Share my sync status with {displayedGroupName}</span>
                     </label>
                     <button
                       type="button"
-                      onClick={() => setOptedOutOfGroup(true)}
+                      onClick={() => onUpdateClosersPrefs({ optedOutOfGroup: true })}
                       className="text-slate-600 hover:text-slate-900 underline underline-offset-2 cursor-pointer self-start sm:self-auto"
                     >
                       Opt out of group view
