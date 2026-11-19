@@ -1,8 +1,10 @@
 import type { User } from 'firebase/auth';
-import type { PortalTab, UnauthViewMode } from '../types';
+import type { DemoPrinciple, PortalTab, UnauthViewMode } from '../types';
 
 interface TopBarProps {
   user: User | null;
+  activePrinciple: DemoPrinciple;
+  onChangePrinciple: (principle: DemoPrinciple) => void;
   unauthMode: UnauthViewMode;
   onChangeUnauthMode: (mode: UnauthViewMode) => void;
   activeTab: PortalTab;
@@ -13,6 +15,8 @@ interface TopBarProps {
 
 export function TopBar({
   user,
+  activePrinciple,
+  onChangePrinciple,
   unauthMode,
   onChangeUnauthMode,
   activeTab,
@@ -28,6 +32,7 @@ export function TopBar({
           href="#top"
           onClick={(e) => {
             e.preventDefault();
+            onChangePrinciple('convenience');
             if (!user) {
               onChangeUnauthMode('side-by-side');
             } else {
@@ -39,57 +44,81 @@ export function TopBar({
           Kestrel Portal
         </a>
 
-        {/* Zone 2: End-user friendly navigation links */}
+        {/* Zone 2: Concise single-line navigation links (5 items max) */}
         {!user ? (
           <nav
             aria-label="Primary"
-            className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600"
+            className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600"
           >
             <button
               type="button"
-              onClick={() => onChangeUnauthMode('side-by-side')}
+              onClick={() => onChangePrinciple('convenience')}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                unauthMode === 'side-by-side'
+                activePrinciple === 'convenience'
                   ? 'border-emerald-700 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Before &amp; After
+              1. Convenience
             </button>
             <button
               type="button"
-              onClick={() => onChangeUnauthMode('focused')}
+              onClick={() => onChangePrinciple('loss-avoidance')}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                unauthMode === 'focused'
-                  ? 'border-emerald-700 text-slate-900'
+                activePrinciple === 'loss-avoidance'
+                  ? 'border-rose-700 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              New Login Page
+              2. Loss Avoidance
             </button>
-            <a
-              href="#what-changed"
-              className="py-1 border-b-2 border-transparent hover:text-slate-900 hover:border-slate-300 transition-colors whitespace-nowrap shrink-0"
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('own-identity')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'own-identity'
+                  ? 'border-violet-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
             >
-              What Changed
-            </a>
-            <a
-              href="#benefits"
-              className="py-1 border-b-2 border-transparent hover:text-slate-900 hover:border-slate-300 transition-colors whitespace-nowrap shrink-0"
+              3. Own Identity
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('status')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'status'
+                  ? 'border-amber-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
             >
-              Benefits
-            </a>
+              4. Status
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('analysis')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'analysis'
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Impact Analysis
+            </button>
           </nav>
         ) : (
           <nav
             aria-label="Account Navigation"
-            className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600"
+            className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600"
           >
             <button
               type="button"
-              onClick={() => onChangeTab('overview')}
+              onClick={() => {
+                onChangePrinciple('convenience');
+                onChangeTab('overview');
+              }}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activeTab === 'overview'
+                activePrinciple === 'convenience' && activeTab === 'overview'
                   ? 'border-emerald-700 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
@@ -98,14 +127,47 @@ export function TopBar({
             </button>
             <button
               type="button"
-              onClick={() => onChangeTab('activity')}
+              onClick={() => onChangePrinciple('loss-avoidance')}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activeTab === 'activity'
-                  ? 'border-emerald-700 text-slate-900'
+                activePrinciple === 'loss-avoidance'
+                  ? 'border-rose-700 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Recent Sign-Ins
+              Loss Avoidance
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('own-identity')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'own-identity'
+                  ? 'border-violet-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Own Identity
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('status')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'status'
+                  ? 'border-amber-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Status
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('analysis')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'analysis'
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Impact Analysis
             </button>
           </nav>
         )}
@@ -113,15 +175,25 @@ export function TopBar({
         {/* Zone 3: Single primary action */}
         <div className="flex items-center shrink-0">
           {!user ? (
-            <button
-              type="button"
-              onClick={() =>
-                onChangeUnauthMode(unauthMode === 'side-by-side' ? 'focused' : 'side-by-side')
-              }
-              className="px-4 py-2 min-h-[40px] text-sm font-medium text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-            >
-              {unauthMode === 'side-by-side' ? 'Preview New Page' : 'Compare Before & After'}
-            </button>
+            activePrinciple === 'analysis' ? (
+              <button
+                type="button"
+                onClick={() => onChangePrinciple('convenience')}
+                className="px-4 py-2 min-h-[40px] text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+              >
+                Open Live Demos
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  onChangeUnauthMode(unauthMode === 'side-by-side' ? 'focused' : 'side-by-side')
+                }
+                className="px-4 py-2 min-h-[40px] text-sm font-medium text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+              >
+                {unauthMode === 'side-by-side' ? 'Preview New Page' : 'Compare Before & After'}
+              </button>
+            )
           ) : (
             <button
               type="button"

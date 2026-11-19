@@ -22,5 +22,11 @@ export interface SignInEvent {
   createdAt: Timestamp | null;
 }
 
+export type DemoPrinciple =
+  | 'convenience'
+  | 'loss-avoidance'
+  | 'own-identity'
+  | 'status'
+  | 'analysis';
 export type UnauthViewMode = 'side-by-side' | 'focused';
 export type PortalTab = 'overview' | 'activity';

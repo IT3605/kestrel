@@ -10,11 +10,12 @@ import {
   ShieldCheck,
   Smartphone,
 } from 'lucide-react';
-import type { UnauthViewMode } from '../types';
+import type { DemoPrinciple, UnauthViewMode } from '../types';
 
 interface LoginExperienceProps {
   mode: UnauthViewMode;
   onChangeMode: (mode: UnauthViewMode) => void;
+  onChangePrinciple: (principle: DemoPrinciple) => void;
   rememberDevice: boolean;
   onToggleRememberDevice: (value: boolean) => void;
   onGoogleSignIn: () => Promise<void>;
@@ -48,6 +49,7 @@ function GoogleGlyph() {
 export function LoginExperience({
   mode,
   onChangeMode,
+  onChangePrinciple,
   rememberDevice,
   onToggleRememberDevice,
   onGoogleSignIn,
@@ -86,9 +88,43 @@ export function LoginExperience({
       {/* Friendly End-User Intro */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 pb-8 border-b border-slate-200">
         <div className="max-w-2xl">
-          <p className="text-xs font-medium text-emerald-700 mb-2">
-            Kestrel Portal · Customer Sign-In Experience
-          </p>
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-3">
+            <span className="text-emerald-700 font-semibold">
+              01. Convenience · Google Sign-In
+            </span>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('loss-avoidance')}
+              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
+            >
+              02. Loss Avoidance
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('own-identity')}
+              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
+            >
+              03. Own Identity
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('status')}
+              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
+            >
+              04. Status
+            </button>
+            <span aria-hidden="true">/</span>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('analysis')}
+              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
+            >
+              Impact Analysis
+            </button>
+          </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
             A simpler, faster way to sign in
           </h1>

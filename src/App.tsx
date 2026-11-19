@@ -15,8 +15,12 @@ import {
   where,
 } from 'firebase/firestore';
 import { AccountHub } from './components/AccountHub';
+import { AnalysisDashboard } from './components/AnalysisDashboard';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginExperience } from './components/LoginExperience';
+import { LossAvoidanceDemo } from './components/LossAvoidanceDemo';
+import { OwnIdentityDemo } from './components/OwnIdentityDemo';
+import { StatusDemo } from './components/StatusDemo';
 import { TopBar } from './components/TopBar';
 import {
   auth,
@@ -26,7 +30,7 @@ import {
   signInWithGoogleSSO,
   signOutPortal,
 } from './firebase';
-import type { PortalTab, SignInEvent, UnauthViewMode, UserAccount } from './types';
+import type { DemoPrinciple, PortalTab, SignInEvent, UnauthViewMode, UserAccount } from './types';
 
 function getDeviceSummary(): string {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -69,6 +73,7 @@ function mapFirebaseAuthError(error: unknown): string {
 function PortalApp() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [activePrinciple, setActivePrinciple] = useState<DemoPrinciple>('analysis');
   const [unauthMode, setUnauthMode] = useState<UnauthViewMode>('side-by-side');
   const [activeTab, setActiveTab] = useState<PortalTab>('overview');
   const [rememberDevice, setRememberDevice] = useState(true);
@@ -286,6 +291,8 @@ function PortalApp() {
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <TopBar
         user={user}
+        activePrinciple={activePrinciple}
+        onChangePrinciple={setActivePrinciple}
         unauthMode={unauthMode}
         onChangeUnauthMode={setUnauthMode}
         activeTab={activeTab}
@@ -295,10 +302,34 @@ function PortalApp() {
       />
 
       <div className="flex-1">
-        {!user ? (
+        {activePrinciple === 'analysis' ? (
+          <AnalysisDashboard onOpenPrinciple={setActivePrinciple} />
+        ) : activePrinciple === 'status' ? (
+          <StatusDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
+        ) : activePrinciple === 'own-identity' ? (
+          <OwnIdentityDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
+        ) : activePrinciple === 'loss-avoidance' ? (
+          <LossAvoidanceDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
+        ) : !user ? (
           <LoginExperience
             mode={unauthMode}
             onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
             rememberDevice={rememberDevice}
             onToggleRememberDevice={setRememberDevice}
             onGoogleSignIn={handleGoogleSignIn}
