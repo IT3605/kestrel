@@ -11,6 +11,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import type { DemoPrinciple, UnauthViewMode } from '../types';
+import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface LoginExperienceProps {
   mode: UnauthViewMode;
@@ -85,46 +86,14 @@ export function LoginExperience({
 
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10 lg:py-12">
+      <ClosersNavStrip activePrinciple="convenience" onChangePrinciple={onChangePrinciple} />
+
       {/* Friendly End-User Intro */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 pb-8 border-b border-slate-200">
         <div className="max-w-2xl">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-3">
-            <span className="text-emerald-700 font-semibold">
-              01. Convenience · Google Sign-In
-            </span>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('loss-avoidance')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              02. Loss Avoidance
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('own-identity')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              03. Own Identity
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('status')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              04. Status
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('analysis')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              Impact Analysis
-            </button>
-          </div>
+          <p className="text-xs font-semibold text-sky-700 mb-2">
+            01. Convenience · Google Sign-In
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
             A simpler, faster way to sign in
           </h1>
@@ -374,7 +343,7 @@ export function LoginExperience({
                   Welcome back
                 </h2>
                 <p className="text-sm text-slate-600 leading-relaxed mb-8">
-                  Sign in with the Google account you already use. There are no account numbers to dig up, no passwords to memorize, and no codes to type.
+                  Keep your photos, devices, and account safe without the password headache—sign in with the Google account you already trust.
                 </p>
 
                 {authError && (

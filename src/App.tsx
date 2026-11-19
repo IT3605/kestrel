@@ -16,11 +16,14 @@ import {
 } from 'firebase/firestore';
 import { AccountHub } from './components/AccountHub';
 import { AnalysisDashboard } from './components/AnalysisDashboard';
+import { EmotionDemo } from './components/EmotionDemo';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginExperience } from './components/LoginExperience';
 import { LossAvoidanceDemo } from './components/LossAvoidanceDemo';
 import { OwnIdentityDemo } from './components/OwnIdentityDemo';
+import { RecognitionDemo } from './components/RecognitionDemo';
 import { StatusDemo } from './components/StatusDemo';
+import { StickinessDemo } from './components/StickinessDemo';
 import { TopBar } from './components/TopBar';
 import {
   auth,
@@ -73,7 +76,7 @@ function mapFirebaseAuthError(error: unknown): string {
 function PortalApp() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const [activePrinciple, setActivePrinciple] = useState<DemoPrinciple>('analysis');
+  const [activePrinciple, setActivePrinciple] = useState<DemoPrinciple>('recognition');
   const [unauthMode, setUnauthMode] = useState<UnauthViewMode>('side-by-side');
   const [activeTab, setActiveTab] = useState<PortalTab>('overview');
   const [rememberDevice, setRememberDevice] = useState(true);
@@ -293,8 +296,6 @@ function PortalApp() {
         user={user}
         activePrinciple={activePrinciple}
         onChangePrinciple={setActivePrinciple}
-        unauthMode={unauthMode}
-        onChangeUnauthMode={setUnauthMode}
         activeTab={activeTab}
         onChangeTab={setActiveTab}
         onSignOut={() => void handleSignOut()}
@@ -304,6 +305,27 @@ function PortalApp() {
       <div className="flex-1">
         {activePrinciple === 'analysis' ? (
           <AnalysisDashboard onOpenPrinciple={setActivePrinciple} />
+        ) : activePrinciple === 'stickiness' ? (
+          <StickinessDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
+        ) : activePrinciple === 'recognition' ? (
+          <RecognitionDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
+        ) : activePrinciple === 'emotion' ? (
+          <EmotionDemo
+            mode={unauthMode}
+            onChangeMode={setUnauthMode}
+            onChangePrinciple={setActivePrinciple}
+            userName={profile?.displayName ?? user?.displayName ?? null}
+          />
         ) : activePrinciple === 'status' ? (
           <StatusDemo
             mode={unauthMode}

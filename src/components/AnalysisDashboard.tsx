@@ -1,21 +1,25 @@
 import { useState } from 'react';
 import { ArrowRight, Check, ShieldCheck } from 'lucide-react';
 import type { DemoPrinciple } from '../types';
+import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface AnalysisDashboardProps {
   onOpenPrinciple: (principle: DemoPrinciple) => void;
 }
 
+type TriggerKey = Exclude<DemoPrinciple, 'analysis'>;
+
 interface PrincipleComparisonRow {
-  id: Exclude<DemoPrinciple, 'analysis'>;
+  id: TriggerKey;
   order: string;
   principle: string;
   evidenceRating: string;
-  productSurface: string;
+  signupRole: string;
   beforeLabel: string;
   afterLabel: string;
   beforeRatePct: number;
   afterRatePct: number;
+  signupLiftPts: number;
   stepsBefore: number;
   stepsAfter: number;
   guardrail: string;
@@ -28,26 +32,28 @@ const PRINCIPLE_ROWS: PrincipleComparisonRow[] = [
     order: '01',
     principle: 'Convenience',
     evidenceRating: 'Strong',
-    productSurface: 'Kestrel Portal Sign-In',
+    signupRole: 'Removes account-creation friction at entry',
     beforeLabel: '5-field form + PIN + CAPTCHA (~45s)',
-    afterLabel: '1-click Google Sign-In (~3s)',
+    afterLabel: '1-click Google Sign-Up / Sign-In (~3s)',
     beforeRatePct: 54,
     afterRatePct: 86,
+    signupLiftPts: 9.0,
     stepsBefore: 5,
     stepsAfter: 1,
-    guardrail: 'Easy default change & 1-click sign out',
-    accentBarClass: 'bg-emerald-700',
+    guardrail: 'Clear default & 1-click sign out',
+    accentBarClass: 'bg-sky-700',
   },
   {
     id: 'loss-avoidance',
     order: '02',
     principle: 'Loss Avoidance',
     evidenceRating: 'Strong in lab, mixed in field',
-    productSurface: 'CloudSync Pro Renewal',
+    signupRole: 'Converts trials before credits & preview files expire',
     beforeLabel: 'Generic "Buy 2 TB for $12/mo" prompt',
     afterLabel: 'Protect 184.6 GB & $25 credit before real deadline',
     beforeRatePct: 18,
     afterRatePct: 34,
+    signupLiftPts: 6.5,
     stepsBefore: 4,
     stepsAfter: 1,
     guardrail: '24h reminder, 1-click export, 2-click cancel & refund',
@@ -58,11 +64,12 @@ const PRINCIPLE_ROWS: PrincipleComparisonRow[] = [
     order: '03',
     principle: 'Own Identity',
     evidenceRating: 'Thin',
-    productSurface: 'Shared Backup Vault',
-    beforeLabel: 'Anonymous "Weekly solo backup due"',
-    afterLabel: 'User-chosen group named on screen + streak',
+    signupRole: 'Anchors signup to a chosen family or team group',
+    beforeLabel: 'Anonymous "Individual storage account"',
+    afterLabel: 'User-chosen group named on screen + shared streak',
     beforeRatePct: 29,
     afterRatePct: 43,
+    signupLiftPts: 3.0,
     stepsBefore: 3,
     stepsAfter: 1,
     guardrail: 'Share status only by consent + 1-click opt-out',
@@ -73,33 +80,84 @@ const PRINCIPLE_ROWS: PrincipleComparisonRow[] = [
     order: '04',
     principle: 'Status',
     evidenceRating: 'Mixed',
-    productSurface: 'Membership Tier Ladder',
+    signupRole: 'Motivates completing onboarding steps toward next tier',
     beforeLabel: 'Flat "Standard User" static label',
     afterLabel: 'Plain-number progress (4 / 5 steps) to Trusted Steward',
     beforeRatePct: 22,
     afterRatePct: 38,
+    signupLiftPts: 3.5,
     stepsBefore: 3,
     stepsAfter: 1,
     guardrail: 'Personal milestones only—no bottom-rank shaming',
     accentBarClass: 'bg-amber-700',
   },
+  {
+    id: 'emotion',
+    order: '05',
+    principle: 'Emotion',
+    evidenceRating: 'Indirect, weaker than gloss',
+    signupRole: 'Connects signup to human memories + welcome celebration',
+    beforeLabel: 'Cold encryption & storage spec form',
+    afterLabel: 'Memory story + accessible reduced-motion celebration',
+    beforeRatePct: 24,
+    afterRatePct: 35,
+    signupLiftPts: 2.5,
+    stepsBefore: 3,
+    stepsAfter: 1,
+    guardrail: 'Respects reduced-motion & avoids guilt-tripping',
+    accentBarClass: 'bg-orange-600',
+  },
+  {
+    id: 'recognition',
+    order: '06',
+    principle: 'Recognition',
+    evidenceRating: 'Small, varies with context',
+    signupRole: 'Builds signup trust with exact counts & verified reviews',
+    beforeLabel: '"Loved by millions!" + unverified 5-star quotes',
+    afterLabel: 'Reconciled vault counts + verified tenure reviews',
+    beforeRatePct: 21,
+    afterRatePct: 36,
+    signupLiftPts: 3.0,
+    stepsBefore: 3,
+    stepsAfter: 1,
+    guardrail: 'Counts reconcile to data + review quality filter',
+    accentBarClass: 'bg-emerald-700',
+  },
+  {
+    id: 'stickiness',
+    order: '07',
+    principle: 'Stickiness',
+    evidenceRating: 'Moderate',
+    signupRole: 'Turns new signups into weekly returning members',
+    beforeLabel: 'One-off upload with zero habit follow-up',
+    afterLabel: 'Weekly backup streak with Streak Freeze & safe return',
+    beforeRatePct: 26,
+    afterRatePct: 44,
+    signupLiftPts: 3.5,
+    stepsBefore: 3,
+    stepsAfter: 1,
+    guardrail: 'Notification opt-outs + welcoming return after break',
+    accentBarClass: 'bg-slate-900',
+  },
 ];
 
 const TRAFFIC_OPTIONS = [2500, 10000, 25000, 50000];
+const BASELINE_OVERALL_SIGNUP_RATE = 19.0;
 
 export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | Exclude<DemoPrinciple, 'analysis'>>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | TriggerKey>('all');
   const [monthlyVisitors, setMonthlyVisitors] = useState<number>(10000);
-  const [enabledPrinciples, setEnabledPrinciples] = useState<
-    Record<Exclude<DemoPrinciple, 'analysis'>, boolean>
-  >({
+  const [enabledPrinciples, setEnabledPrinciples] = useState<Record<TriggerKey, boolean>>({
     convenience: true,
     'loss-avoidance': true,
     'own-identity': true,
     status: true,
+    emotion: true,
+    recognition: true,
+    stickiness: true,
   });
 
-  const togglePrinciple = (id: Exclude<DemoPrinciple, 'analysis'>) => {
+  const togglePrinciple = (id: TriggerKey) => {
     setEnabledPrinciples((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -111,18 +169,9 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
       ? PRINCIPLE_ROWS
       : PRINCIPLE_ROWS.filter((r) => r.id === selectedFilter);
 
-  const activeCount = Object.values(enabledPrinciples).filter(Boolean).length;
-
-  // Compute modeled flow metrics across enabled changes
   const activeRows = PRINCIPLE_ROWS.filter((r) => enabledPrinciples[r.id]);
-  const avgBeforeRate =
-    PRINCIPLE_ROWS.reduce((sum, r) => sum + r.beforeRatePct, 0) / PRINCIPLE_ROWS.length;
-
-  const avgAfterRate =
-    PRINCIPLE_ROWS.reduce(
-      (sum, r) => sum + (enabledPrinciples[r.id] ? r.afterRatePct : r.beforeRatePct),
-      0
-    ) / PRINCIPLE_ROWS.length;
+  const totalLiftPts = activeRows.reduce((sum, r) => sum + r.signupLiftPts, 0);
+  const projectedOverallSignupRate = BASELINE_OVERALL_SIGNUP_RATE + totalLiftPts;
 
   const totalStepsBefore = PRINCIPLE_ROWS.reduce((sum, r) => sum + r.stepsBefore, 0);
   const totalStepsAfter = PRINCIPLE_ROWS.reduce(
@@ -130,58 +179,28 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
     0
   );
 
-  const baselineCompleted = Math.round((monthlyVisitors * avgBeforeRate) / 100);
-  const projectedCompleted = Math.round((monthlyVisitors * avgAfterRate) / 100);
-  const netLiftCompleted = projectedCompleted - baselineCompleted;
+  const baselineSignups = Math.round((monthlyVisitors * BASELINE_OVERALL_SIGNUP_RATE) / 100);
+  const projectedSignups = Math.round((monthlyVisitors * projectedOverallSignupRate) / 100);
+  const extraSignupsPerMonth = projectedSignups - baselineSignups;
   const resetTicketsAvoided = enabledPrinciples.convenience
     ? Math.round(monthlyVisitors * 0.08)
     : 0;
 
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10 lg:py-12">
-      {/* Header & Breadcrumb */}
+      <ClosersNavStrip activePrinciple="analysis" onChangePrinciple={onOpenPrinciple} />
+
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 pb-8 border-b border-slate-200">
         <div className="max-w-2xl">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-3">
-            <button
-              type="button"
-              onClick={() => onOpenPrinciple('convenience')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              01. Convenience
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onOpenPrinciple('loss-avoidance')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              02. Loss Avoidance
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onOpenPrinciple('own-identity')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              03. Own Identity
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onOpenPrinciple('status')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              04. Status
-            </button>
-            <span aria-hidden="true">/</span>
-            <span className="text-slate-900 font-semibold">Impact Analysis</span>
-          </div>
+          <p className="text-xs font-semibold text-emerald-700 mb-2">
+            Full 7-Trigger CLOSERS Audit
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
-            Before &amp; After UX Impact Analysis
+            Increasing Signups Across Kestrel CloudSync
           </h1>
           <p className="mt-3 text-base text-slate-600 leading-relaxed">
-            A side-by-side operational summary of the four improvements applied to <strong className="font-medium text-slate-900">Kestrel Portal &amp; CloudSync Pro</strong>—showing step reductions, modeled completion lift, and ethical guardrails.
+            How all seven enhancements—<strong className="font-medium text-slate-900">Convenience, Loss Avoidance, Own Identity, Status, Emotion, Recognition, and Stickiness</strong>—work together to lift visitor-to-member signups and retention while protecting user trust.
           </p>
         </div>
 
@@ -202,7 +221,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            All (4)
+            All (7)
           </button>
           {PRINCIPLE_ROWS.map((row) => (
             <button
@@ -223,10 +242,40 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
         </div>
       </div>
 
-      {/* Top KPI Summary Strip (Single Elevation, Tabular Numerals) */}
-      <section aria-label="Summary metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Top KPI Summary Strip Focused on Signup Objective */}
+      <section aria-label="Signup KPI summary" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white border border-slate-200 rounded-xl p-6">
-          <p className="text-xs font-medium text-slate-500">Total User Steps (4 Flows)</p>
+          <p className="text-xs font-medium text-slate-500">Projected Signup Rate</p>
+          <div className="mt-2 flex items-baseline gap-2.5">
+            <span className="text-3xl font-bold font-mono tabular-nums text-slate-900">
+              {projectedOverallSignupRate.toFixed(1)}%
+            </span>
+            <span className="text-xs font-mono tabular-nums text-emerald-700 font-medium">
+              +{totalLiftPts.toFixed(1)} pts
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Up from {BASELINE_OVERALL_SIGNUP_RATE.toFixed(1)}% legacy baseline
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <p className="text-xs font-medium text-slate-500">Projected Monthly Signups</p>
+          <div className="mt-2 flex items-baseline gap-2.5">
+            <span className="text-3xl font-bold font-mono tabular-nums text-slate-900">
+              {projectedSignups.toLocaleString()}
+            </span>
+            <span className="text-xs font-mono tabular-nums text-emerald-700 font-medium">
+              +{extraSignupsPerMonth.toLocaleString()} new
+            </span>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            Out of {monthlyVisitors.toLocaleString()} monthly visitors
+          </p>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl p-6">
+          <p className="text-xs font-medium text-slate-500">Steps Across 7 Touchpoints</p>
           <div className="mt-2 flex items-baseline gap-2.5">
             <span className="text-3xl font-bold font-mono tabular-nums text-slate-900">
               {totalStepsAfter}
@@ -236,37 +285,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
             </span>
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            {activeCount} of 4 improvements active
-          </p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
-          <p className="text-xs font-medium text-slate-500">Modeled Avg. Completion</p>
-          <div className="mt-2 flex items-baseline gap-2.5">
-            <span className="text-3xl font-bold font-mono tabular-nums text-slate-900">
-              {avgAfterRate.toFixed(1)}%
-            </span>
-            <span className="text-xs font-mono tabular-nums text-emerald-700 font-medium">
-              +{Math.max(0, avgAfterRate - avgBeforeRate).toFixed(1)} pts
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Baseline was {avgBeforeRate.toFixed(1)}%
-          </p>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-xl p-6">
-          <p className="text-xs font-medium text-slate-500">Monthly Completed Journeys</p>
-          <div className="mt-2 flex items-baseline gap-2.5">
-            <span className="text-3xl font-bold font-mono tabular-nums text-slate-900">
-              {projectedCompleted.toLocaleString()}
-            </span>
-            <span className="text-xs font-mono tabular-nums text-emerald-700 font-medium">
-              +{netLiftCompleted.toLocaleString()}
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Out of {monthlyVisitors.toLocaleString()} visitors
+            {activeRows.length} of 7 enhancements active
           </p>
         </div>
 
@@ -281,21 +300,20 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
             </span>
           </div>
           <p className="mt-2 text-xs text-slate-500">
-            4/4 guardrails active
+            7/7 trust guardrails active
           </p>
         </div>
       </section>
 
-      {/* Interactive Scenario Modeling + Before/After Bar Comparison */}
+      {/* Simulator + Before/After Chart */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8 items-start">
-        {/* Left: Interactive Controls */}
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 sm:p-7 space-y-6">
           <div>
             <h2 className="text-base font-semibold text-slate-900 mb-1">
-              Interactive Impact Simulator
+              Signup Lift Simulator
             </h2>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Toggle individual improvements on or off and adjust monthly traffic to see the projected impact.
+              Toggle each UX enhancement on or off to see how individual triggers combine toward the signup goal.
             </p>
           </div>
 
@@ -319,12 +337,12 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
             </div>
           </div>
 
-          <div className="space-y-2.5 pt-2 border-t border-slate-100">
-            <p className="text-xs font-medium text-slate-700">Enabled UX Changes</p>
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <p className="text-xs font-medium text-slate-700">Enabled Enhancements</p>
             {PRINCIPLE_ROWS.map((row) => (
               <label
                 key={row.id}
-                className="flex items-center justify-between gap-3 p-2.5 rounded-lg hover:bg-slate-50 cursor-pointer select-none"
+                className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer select-none"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <input
@@ -338,31 +356,31 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                       {row.order}. {row.principle}
                     </span>
                     <span className="block text-xs text-slate-500 truncate">
-                      {row.productSurface}
+                      {row.signupRole}
                     </span>
                   </div>
                 </div>
-                <span className="font-mono tabular-nums text-xs text-slate-600 shrink-0">
-                  {row.stepsBefore} → {row.stepsAfter} step
+                <span className="font-mono tabular-nums text-xs text-emerald-700 font-medium shrink-0">
+                  +{row.signupLiftPts.toFixed(1)} pts
                 </span>
               </label>
             ))}
           </div>
 
           <p className="text-xs text-slate-500 pt-2 border-t border-slate-100">
-            Illustrative UX model for demo planning—real conversion should be validated via A/B testing with the guardrails monitored.
+            Illustrative UX projection for planning; validate final conversion and unsubscribe/complaint rates via A/B tests.
           </p>
         </div>
 
-        {/* Right: Before vs. After Completion Rate Comparison Chart */}
+        {/* Right: Before vs. After Step Completion Bars */}
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 sm:p-7">
           <div className="flex flex-wrap items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-100">
             <div>
               <h2 className="text-base font-semibold text-slate-900">
-                Before vs. After Completion by Trigger
+                Before vs. After Step Completion Rate
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                Comparing legacy baseline flows against the redesigned screens
+                How each redesigned touchpoint removes drop-off along the signup journey
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs text-slate-600">
@@ -377,7 +395,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
             {visibleRows.map((row) => {
               const isEnabled = enabledPrinciples[row.id];
               const currentAfterPct = isEnabled ? row.afterRatePct : row.beforeRatePct;
@@ -390,7 +408,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                       <span className="text-sm font-semibold text-slate-900">
                         {row.order}. {row.principle}
                       </span>
-                      <span className="text-xs text-slate-500">· {row.productSurface}</span>
+                      <span className="text-xs text-slate-500">· {row.evidenceRating}</span>
                     </div>
                     <div className="flex items-baseline gap-2 font-mono tabular-nums text-xs">
                       <span className="text-slate-500">{row.beforeRatePct}%</span>
@@ -402,7 +420,6 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                     </div>
                   </div>
 
-                  {/* Dual Horizontal Bar */}
                   <div className="space-y-1.5">
                     <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div
@@ -426,19 +443,19 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
         </div>
       </section>
 
-      {/* Full Change Breakdown & Guardrail Audit Table */}
+      {/* Complete 7-Enhancement Audit Table */}
       <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold text-slate-900">
-              Complete Redesign &amp; Guardrail Audit
+              Full Signup Redesign &amp; Guardrail Matrix
             </h2>
             <p className="text-sm text-slate-600">
-              Review every front-end change, evidence strength, and user-protection guardrail—or jump directly into any screen.
+              Every CLOSERS enhancement implemented, its role in driving signups, and its user-protection guardrail.
             </p>
           </div>
           <span className="text-xs font-mono tabular-nums text-slate-500">
-            {visibleRows.length} {visibleRows.length === 1 ? 'flow' : 'flows'} shown
+            {visibleRows.length} of 7 flows
           </span>
         </div>
 
@@ -446,7 +463,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-xs font-medium text-slate-500">
-                <th className="py-3 px-5">Principle</th>
+                <th className="py-3 px-5">Enhancement</th>
                 <th className="py-3 px-5">Before (Original)</th>
                 <th className="py-3 px-5">After (Improved)</th>
                 <th className="py-3 px-5 text-right">Steps</th>
@@ -462,13 +479,13 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                       {row.order}. {row.principle}
                     </div>
                     <div className="text-xs text-slate-500 mt-0.5">
-                      {row.productSurface} · {row.evidenceRating}
+                      {row.signupRole}
                     </div>
                   </td>
-                  <td className="py-4 px-5 align-top text-xs text-slate-600 max-w-[220px]">
+                  <td className="py-4 px-5 align-top text-xs text-slate-600 max-w-[210px]">
                     {row.beforeLabel}
                   </td>
-                  <td className="py-4 px-5 align-top text-xs text-slate-900 font-medium max-w-[230px]">
+                  <td className="py-4 px-5 align-top text-xs text-slate-900 font-medium max-w-[220px]">
                     <span className="inline-flex items-start gap-1.5">
                       <Check className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{row.afterLabel}</span>
@@ -477,7 +494,7 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
                   <td className="py-4 px-5 align-top text-right font-mono tabular-nums text-xs text-slate-800 whitespace-nowrap">
                     {row.stepsBefore} → {row.stepsAfter}
                   </td>
-                  <td className="py-4 px-5 align-top text-xs text-slate-700 max-w-[220px]">
+                  <td className="py-4 px-5 align-top text-xs text-slate-700 max-w-[210px]">
                     <span className="inline-flex items-start gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{row.guardrail}</span>
@@ -499,12 +516,6 @@ export function AnalysisDashboard({ onOpenPrinciple }: AnalysisDashboardProps) {
           </table>
         </div>
       </section>
-
-      {activeRows.length === 0 && (
-        <p className="mt-4 text-xs text-slate-500">
-          Enable at least one UX change in the simulator above to preview projected lift.
-        </p>
-      )}
     </main>
   );
 }

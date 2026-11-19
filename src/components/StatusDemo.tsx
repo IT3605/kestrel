@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import type { DemoPrinciple, UnauthViewMode } from '../types';
+import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface StatusDemoProps {
   mode: UnauthViewMode;
@@ -90,38 +91,14 @@ export function StatusDemo({
 
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10 lg:py-12">
-      {/* Breadcrumb & Header */}
+      <ClosersNavStrip activePrinciple="status" onChangePrinciple={onChangePrinciple} />
+
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 pb-8 border-b border-slate-200">
         <div className="max-w-2xl">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-3">
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('convenience')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              01. Convenience · Google Sign-In
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('loss-avoidance')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              02. Loss Avoidance · CloudSync Pro
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('own-identity')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              03. Own Identity · Tribes &amp; Ties
-            </button>
-            <span aria-hidden="true">/</span>
-            <span className="text-amber-800 font-semibold">
-              04. Status · Climbing the Ladder
-            </span>
-          </div>
+          <p className="text-xs font-semibold text-amber-800 mb-2">
+            04. Status · Climbing the Ladder
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
             Show clear progress to the next tier, in plain numbers
           </h1>

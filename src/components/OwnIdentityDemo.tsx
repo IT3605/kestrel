@@ -11,6 +11,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { DemoPrinciple, UnauthViewMode } from '../types';
+import { ClosersNavStrip } from './ClosersNavStrip';
 
 interface OwnIdentityDemoProps {
   mode: UnauthViewMode;
@@ -78,46 +79,14 @@ export function OwnIdentityDemo({
 
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10 lg:py-12">
-      {/* 3-Principle Breadcrumb & Page Header */}
+      <ClosersNavStrip activePrinciple="own-identity" onChangePrinciple={onChangePrinciple} />
+
+      {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8 pb-8 border-b border-slate-200">
         <div className="max-w-2xl">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-3">
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('convenience')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              01. Convenience
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('loss-avoidance')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              02. Loss Avoidance
-            </button>
-            <span aria-hidden="true">/</span>
-            <span className="text-violet-800 font-semibold">
-              03. Own Identity · Tribes &amp; Ties
-            </span>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('status')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              04. Status
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('analysis')}
-              className="hover:text-slate-900 underline underline-offset-4 cursor-pointer"
-            >
-              Impact Analysis
-            </button>
-          </div>
+          <p className="text-xs font-semibold text-violet-800 mb-2">
+            03. Own Identity · Tribes &amp; Ties
+          </p>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 leading-tight [text-wrap:balance]">
             Turn a solo chore into something &ldquo;we&rdquo; do together
           </h1>

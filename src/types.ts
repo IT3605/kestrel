@@ -27,6 +27,9 @@ export type DemoPrinciple =
   | 'loss-avoidance'
   | 'own-identity'
   | 'status'
+  | 'emotion'
+  | 'recognition'
+  | 'stickiness'
   | 'analysis';
 export type UnauthViewMode = 'side-by-side' | 'focused';
 export type PortalTab = 'overview' | 'activity';

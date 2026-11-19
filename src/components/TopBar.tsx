@@ -1,12 +1,10 @@
 import type { User } from 'firebase/auth';
-import type { DemoPrinciple, PortalTab, UnauthViewMode } from '../types';
+import type { DemoPrinciple, PortalTab } from '../types';
 
 interface TopBarProps {
   user: User | null;
   activePrinciple: DemoPrinciple;
   onChangePrinciple: (principle: DemoPrinciple) => void;
-  unauthMode: UnauthViewMode;
-  onChangeUnauthMode: (mode: UnauthViewMode) => void;
   activeTab: PortalTab;
   onChangeTab: (tab: PortalTab) => void;
   onSignOut: () => void;
@@ -17,13 +15,13 @@ export function TopBar({
   user,
   activePrinciple,
   onChangePrinciple,
-  unauthMode,
-  onChangeUnauthMode,
   activeTab,
   onChangeTab,
   onSignOut,
   signingOut,
 }: TopBarProps) {
+  const inDemoView = activePrinciple !== 'analysis';
+
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200">
       <div className="max-w-[1320px] mx-auto px-6 h-16 flex items-center justify-between gap-8">
@@ -32,10 +30,8 @@ export function TopBar({
           href="#top"
           onClick={(e) => {
             e.preventDefault();
-            onChangePrinciple('convenience');
-            if (!user) {
-              onChangeUnauthMode('side-by-side');
-            } else {
+            onChangePrinciple('analysis');
+            if (user) {
               onChangeTab('overview');
             }
           }}
@@ -44,56 +40,12 @@ export function TopBar({
           Kestrel Portal
         </a>
 
-        {/* Zone 2: Concise single-line navigation links (5 items max) */}
+        {/* Zone 2: Concise single-line navigation links (4–5 items) */}
         {!user ? (
           <nav
             aria-label="Primary"
-            className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600"
+            className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600"
           >
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('convenience')}
-              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'convenience'
-                  ? 'border-emerald-700 text-slate-900'
-                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              1. Convenience
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('loss-avoidance')}
-              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'loss-avoidance'
-                  ? 'border-rose-700 text-slate-900'
-                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              2. Loss Avoidance
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('own-identity')}
-              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'own-identity'
-                  ? 'border-violet-700 text-slate-900'
-                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              3. Own Identity
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('status')}
-              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'status'
-                  ? 'border-amber-700 text-slate-900'
-                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              4. Status
-            </button>
             <button
               type="button"
               onClick={() => onChangePrinciple('analysis')}
@@ -103,13 +55,46 @@ export function TopBar({
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Impact Analysis
+              Signup Impact
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('convenience')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'convenience'
+                  ? 'border-sky-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Google Sign-Up
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('recognition')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'recognition'
+                  ? 'border-emerald-700 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Recognition
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangePrinciple('stickiness')}
+              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                activePrinciple === 'stickiness'
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
+              }`}
+            >
+              Stickiness
             </button>
           </nav>
         ) : (
           <nav
             aria-label="Account Navigation"
-            className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600"
+            className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600"
           >
             <button
               type="button"
@@ -127,36 +112,25 @@ export function TopBar({
             </button>
             <button
               type="button"
-              onClick={() => onChangePrinciple('loss-avoidance')}
+              onClick={() => onChangePrinciple('recognition')}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'loss-avoidance'
-                  ? 'border-rose-700 text-slate-900'
+                activePrinciple === 'recognition'
+                  ? 'border-emerald-700 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Loss Avoidance
+              Recognition
             </button>
             <button
               type="button"
-              onClick={() => onChangePrinciple('own-identity')}
+              onClick={() => onChangePrinciple('stickiness')}
               className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'own-identity'
-                  ? 'border-violet-700 text-slate-900'
+                activePrinciple === 'stickiness'
+                  ? 'border-slate-900 text-slate-900'
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Own Identity
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangePrinciple('status')}
-              className={`py-1 border-b-2 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                activePrinciple === 'status'
-                  ? 'border-amber-700 text-slate-900'
-                  : 'border-transparent hover:text-slate-900 hover:border-slate-300'
-              }`}
-            >
-              Status
+              Stickiness
             </button>
             <button
               type="button"
@@ -167,7 +141,7 @@ export function TopBar({
                   : 'border-transparent hover:text-slate-900 hover:border-slate-300'
               }`}
             >
-              Impact Analysis
+              Signup Impact
             </button>
           </nav>
         )}
@@ -175,23 +149,21 @@ export function TopBar({
         {/* Zone 3: Single primary action */}
         <div className="flex items-center shrink-0">
           {!user ? (
-            activePrinciple === 'analysis' ? (
+            inDemoView ? (
+              <button
+                type="button"
+                onClick={() => onChangePrinciple('analysis')}
+                className="px-4 py-2 min-h-[40px] text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
+              >
+                Signup Impact
+              </button>
+            ) : (
               <button
                 type="button"
                 onClick={() => onChangePrinciple('convenience')}
                 className="px-4 py-2 min-h-[40px] text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
               >
                 Open Live Demos
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() =>
-                  onChangeUnauthMode(unauthMode === 'side-by-side' ? 'focused' : 'side-by-side')
-                }
-                className="px-4 py-2 min-h-[40px] text-sm font-medium text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
-              >
-                {unauthMode === 'side-by-side' ? 'Preview New Page' : 'Compare Before & After'}
               </button>
             )
           ) : (
