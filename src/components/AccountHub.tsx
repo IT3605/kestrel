@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 import { Check, CheckCircle2, LogOut, Shield, Trash2, UserCheck } from 'lucide-react';
-import type { ClosersPreferences, DemoPrinciple, PortalTab, SignInEvent, UserAccount } from '../types';
+import type {
+  ClosersPreferences,
+  DemoPrinciple,
+  PortalFeatureUsage,
+  PortalTab,
+  SignInEvent,
+  UserAccount,
+} from '../types';
 import { ClosersNavStrip } from './ClosersNavStrip';
+import { GuidedProgress } from './GuidedProgress';
 
 interface AccountHubProps {
   user: User;
@@ -14,6 +22,7 @@ interface AccountHubProps {
   onChangeTab: (tab: PortalTab) => void;
   onChangePrinciple: (principle: DemoPrinciple) => void;
   closersPrefs: ClosersPreferences;
+  featureUsage: PortalFeatureUsage;
   onSaveProfile: (updates: {
     displayName: string;
     accountLabel: string;
@@ -35,6 +44,7 @@ export function AccountHub({
   onChangeTab,
   onChangePrinciple,
   closersPrefs,
+  featureUsage,
   onSaveProfile,
   onEndSession,
   onDeleteSession,
@@ -126,6 +136,14 @@ export function AccountHub({
     }).format(ts.toDate());
   };
 
+  const handleFocusProfileField = (elementId: string) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+    }
+  };
+
   return (
     <main id="top" className="max-w-[1320px] mx-auto px-6 py-10">
       <ClosersNavStrip activePrinciple="convenience" onChangePrinciple={onChangePrinciple} />
@@ -179,7 +197,18 @@ export function AccountHub({
       </div>
 
       {activeTab === 'overview' && (
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <>
+          <GuidedProgress
+            user={user}
+            profile={profile}
+            events={events}
+            closersPrefs={closersPrefs}
+            featureUsage={featureUsage}
+            onChangeTab={onChangeTab}
+            onChangePrinciple={onChangePrinciple}
+            onFocusProfileField={handleFocusProfileField}
+          />
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Customer Profile Summary */}
           <section className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 sm:p-8">
             <div className="flex items-center gap-4 pb-6 border-b border-slate-100">
@@ -484,7 +513,8 @@ export function AccountHub({
               </form>
             )}
           </section>
-        </div>
+          </div>
+        </>
       )}
 
       {activeTab === 'activity' && (

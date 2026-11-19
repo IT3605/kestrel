@@ -38,11 +38,41 @@ import {
   DEFAULT_CLOSERS_PREFERENCES,
   type ClosersPreferences,
   type DemoPrinciple,
+  type PortalFeatureUsage,
   type PortalTab,
   type SignInEvent,
   type UnauthViewMode,
   type UserAccount,
 } from './types';
+
+const DEFAULT_FEATURE_USAGE: PortalFeatureUsage = {
+  savedProfile: false,
+  reviewedGuardrails: false,
+  visitedActivity: false,
+  visitedJourney: false,
+  visitedAnalysis: false,
+  visitedDemos: [],
+};
+
+function loadFeatureUsage(uid: string): PortalFeatureUsage {
+  try {
+    const raw = localStorage.getItem(`kestrel_progress_${uid}`);
+    if (!raw) return DEFAULT_FEATURE_USAGE;
+    const parsed = JSON.parse(raw) as Partial<PortalFeatureUsage>;
+    return {
+      savedProfile: Boolean(parsed.savedProfile),
+      reviewedGuardrails: Boolean(parsed.reviewedGuardrails),
+      visitedActivity: Boolean(parsed.visitedActivity),
+      visitedJourney: Boolean(parsed.visitedJourney),
+      visitedAnalysis: Boolean(parsed.visitedAnalysis),
+      visitedDemos: Array.isArray(parsed.visitedDemos)
+        ? parsed.visitedDemos.filter((v): v is string => typeof v === 'string')
+        : [],
+    };
+  } catch {
+    return DEFAULT_FEATURE_USAGE;
+  }
+}
 
 function getDeviceSummary(): string {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -136,9 +166,26 @@ function PortalApp() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [events, setEvents] = useState<SignInEvent[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
+  const [featureUsage, setFeatureUsage] = useState<PortalFeatureUsage>(DEFAULT_FEATURE_USAGE);
 
   const loggedSessionUidRef = useRef<string | null>(null);
   const prefsPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const recordFeatureUsage = useCallback(
+    (updater: (prev: PortalFeatureUsage) => PortalFeatureUsage) => {
+      if (!user) return;
+      setFeatureUsage((prev) => {
+        const next = updater(prev);
+        try {
+          localStorage.setItem(`kestrel_progress_${user.uid}`, JSON.stringify(next));
+        } catch {
+          // Ignore storage quota errors
+        }
+        return next;
+      });
+    },
+    [user]
+  );
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
@@ -147,11 +194,37 @@ function PortalApp() {
       if (!nextUser) {
         setProfile(null);
         setEvents([]);
+        setFeatureUsage(DEFAULT_FEATURE_USAGE);
         loggedSessionUidRef.current = null;
+      } else {
+        setFeatureUsage(loadFeatureUsage(nextUser.uid));
       }
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    if (activePrinciple === 'journey') {
+      recordFeatureUsage((prev) =>
+        prev.visitedJourney ? prev : { ...prev, visitedJourney: true }
+      );
+    } else if (activePrinciple === 'analysis') {
+      recordFeatureUsage((prev) =>
+        prev.visitedAnalysis ? prev : { ...prev, visitedAnalysis: true }
+      );
+    } else if (activePrinciple === 'convenience' && activeTab === 'activity') {
+      recordFeatureUsage((prev) =>
+        prev.visitedActivity ? prev : { ...prev, visitedActivity: true }
+      );
+    } else if (activePrinciple !== 'convenience') {
+      recordFeatureUsage((prev) =>
+        prev.visitedDemos.includes(activePrinciple)
+          ? prev
+          : { ...prev, visitedDemos: [...prev.visitedDemos, activePrinciple] }
+      );
+    }
+  }, [user, activePrinciple, activeTab, recordFeatureUsage]);
 
   useEffect(() => {
     if (!authReady || !user) {
@@ -300,6 +373,10 @@ function PortalApp() {
 
       if (!user) return;
 
+      recordFeatureUsage((prev) =>
+        prev.reviewedGuardrails ? prev : { ...prev, reviewedGuardrails: true }
+      );
+
       if (prefsPersistTimerRef.current) {
         clearTimeout(prefsPersistTimerRef.current);
       }
@@ -322,7 +399,7 @@ function PortalApp() {
         });
       }, 250);
     },
-    [user]
+    [user, recordFeatureUsage]
   );
 
   const handleGoogleSignIn = async () => {
@@ -382,6 +459,11 @@ function PortalApp() {
         reducedMotionCelebration: nextPrefs.reducedMotionCelebration,
         updatedAt: serverTimestamp(),
       });
+      recordFeatureUsage((prev) => ({
+        ...prev,
+        savedProfile: true,
+        reviewedGuardrails: true,
+      }));
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, path);
     }
@@ -520,6 +602,7 @@ function PortalApp() {
             onChangeTab={setActiveTab}
             onChangePrinciple={setActivePrinciple}
             closersPrefs={closersPrefs}
+            featureUsage={featureUsage}
             onSaveProfile={handleSaveProfile}
             onEndSession={handleEndSession}
             onDeleteSession={handleDeleteSession}

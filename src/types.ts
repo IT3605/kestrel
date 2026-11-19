@@ -61,3 +61,13 @@ export type DemoPrinciple =
   | 'analysis';
 export type UnauthViewMode = 'side-by-side' | 'focused';
 export type PortalTab = 'overview' | 'activity';
+
+export interface PortalFeatureUsage {
+  savedProfile: boolean;
+  reviewedGuardrails: boolean;
+  visitedActivity: boolean;
+  visitedJourney: boolean;
+  visitedAnalysis: boolean;
+  visitedDemos: string[];
+}
+
